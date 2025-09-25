@@ -1,0 +1,51 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.env
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite3
+
+# Uploads
+uploads/
+temp/
+
+# Build
+build/
+dist/
+*.tgz
+*.tar.gz
+
+# Testing
+coverage/
+.coverage
+.pytest_cache/
+
+# Environment variables
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
