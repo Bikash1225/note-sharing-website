@@ -2,3 +2,4 @@
 #.env
 # idrc if u are about this env
 node_modules/
+.next
