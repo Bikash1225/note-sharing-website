@@ -1,0 +1,123 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  clerkId     String?  @unique // Clerk user identifier
+  email       String   @unique
+  username    String   @unique
+  displayName String?
+  avatar      String?
+  password    String? // Will be removed after migration
+  
+  // Migration tracking
+  migratedAt    DateTime? // When user was migrated to Clerk
+  migrationId   String?   // Migration batch identifier
+  
+  preferences Json @default("{\"theme\":\"auto\",\"editorMode\":\"rich\",\"notifications\":true,\"collaborationSettings\":{}}")
+  subscription Json @default("{\"tier\":\"free\",\"expiresAt\":null}")
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  lastActiveAt DateTime @default(now())
+  
+  notes         Note[]
+  folders       Folder[]
+  collaborations NoteCollaborator[]
+  
+  @@map("users")
+}
+
+model Note {
+  id        String   @id @default(cuid())
+  title     String
+  content   Json     @default("{}")
+  excerpt   String?
+  
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  
+  folderId  String?
+  folder    Folder?  @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  
+  tags      String[]
+  isPublic  Boolean  @default(false)
+  
+  shareSettings Json @default("{\"allowComments\":false,\"allowEditing\":false,\"expiresAt\":null}")
+  metadata      Json @default("{\"wordCount\":0,\"readingTime\":0,\"version\":1}")
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  publishedAt DateTime?
+  
+  collaborators NoteCollaborator[]
+  
+  @@map("notes")
+  @@index([authorId])
+  @@index([folderId])
+  @@index([isPublic])
+  @@index([createdAt])
+}
+
+model Folder {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  
+  parentId    String?
+  parent      Folder?  @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children    Folder[] @relation("FolderHierarchy")
+  
+  ownerId     String
+  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  
+  color       String   @default("#3b82f6")
+  icon        String   @default("folder")
+  sortOrder   Int      @default(0)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  notes       Note[]
+  
+  @@map("folders")
+  @@index([ownerId])
+  @@index([parentId])
+}
+
+model NoteCollaborator {
+  id       String @id @default(cuid())
+  
+  noteId   String
+  note     Note   @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  role     String @default("viewer") // viewer, editor, admin
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([noteId, userId])
+  @@map("note_collaborators")
+}
+
+model UserMigration {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  clerkId         String   @unique
+  email           String
+  migrationStatus String   // 'pending', 'completed', 'failed'
+  migrationData   Json?    // Store migration metadata
+  createdAt       DateTime @default(now())
+  completedAt     DateTime?
+  
+  @@map("user_migrations")
+}
